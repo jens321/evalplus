@@ -1,5 +1,5 @@
 from evalplus.provider.base import DecoderBase
-
+from typing import Optional
 
 def make_model(
     model: str,
@@ -26,6 +26,7 @@ def make_model(
     # gptqmodel only
     gptqmodel_backend: str = 'auto',
     gguf_file: str = None,
+    vllm_seed: Optional[int] = 0,
 ) -> DecoderBase:
     if backend == "vllm":
         from evalplus.provider.vllm import VllmDecoder
@@ -43,7 +44,8 @@ def make_model(
             enable_prefix_caching=enable_prefix_caching,
             enable_chunked_prefill=enable_chunked_prefill,
             dtype=dtype,
-            gguf_file=gguf_file
+            gguf_file=gguf_file,
+            vllm_seed=vllm_seed,
         )
     elif backend == "hf":
         from evalplus.provider.hf import HuggingFaceDecoder
