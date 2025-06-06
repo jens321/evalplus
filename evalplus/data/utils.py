@@ -8,7 +8,8 @@ import tempdir
 import wget
 from appdirs import user_cache_dir
 
-CACHE_DIR = user_cache_dir("evalplus")
+# CACHE_DIR = user_cache_dir("evalplus") # TODO: revert
+CACHE_DIR = 'evalplus/cache'
 
 
 def get_dataset_metadata(name: str, version: str, mini: bool, noextreme: bool = False):
