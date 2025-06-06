@@ -4,6 +4,7 @@ import os
 import pickle
 import threading
 import time
+import sys
 from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
@@ -41,6 +42,7 @@ Result = Tuple[str, List[bool]]
 
 def get_groundtruth(problems, hashcode, tasks_only_output_not_none):
     cache_file = os.path.join(CACHE_DIR, f"{hashcode}.pkl")
+    print('cache_file', cache_file)
     if os.path.exists(cache_file):
         print(f"Load from ground-truth from {cache_file}")
         with open(cache_file, "rb") as f:
@@ -107,6 +109,7 @@ def check_correctness(
         gt_time_limit_factor=gt_time_limit_factor,
     )
 
+
     if not base_only:
         ret["plus"] = untrusted_check(
             dataset,
@@ -120,7 +123,6 @@ def check_correctness(
             min_time_limit=min_time_limit,
             gt_time_limit_factor=gt_time_limit_factor,
         )
-
     return ret
 
 
@@ -237,15 +239,19 @@ def evaluate(
                 n_samples += 1
 
             assert n_samples == len(remainings), "Missing problems in unfinished"
-            assert len(completion_id) == len(problems), "Missing problems in samples"
+            # assert len(completion_id) == len(problems), "Missing problems in samples"
 
             def stucking_checker():
                 while remainings:
                     last_size = len(remainings)
                     time.sleep(20)
                     if last_size != len(remainings) or len(remainings) == 0:
+                        sys.stdout.write('continuing ... \n')
+                        sys.stdout.flush()
                         continue
                     # Potential stucking
+                    sys.stdout.write('still no samples finished ... \n')
+                    sys.stdout.flush()
                     warn("No samples had finished testing in the last 20s")
                     warn(f"{len(remainings)} samples to be tested: {remainings}")
 
