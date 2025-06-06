@@ -100,7 +100,7 @@ def query_maximum_memory_bytes() -> Optional[int]:
     # Disable functionalities that can make destructive changes to the test.
     # allow only 4GB memory usage
     maximum_memory_bytes = os.getenv(
-        "EVALPLUS_MAX_MEMORY_BYTES", 4 * 1024 * 1024 * 1024
+        "EVALPLUS_MAX_MEMORY_BYTES", 8 * 1024 * 1024 * 1024
     )
     maximum_memory_bytes = min(int(maximum_memory_bytes), psutil.virtual_memory().total)
     if maximum_memory_bytes == -1:
@@ -132,6 +132,7 @@ def unsafe_execute(
     details,  # Array
     progress,  # Value
 ):
+    # print('unsafe execute')
     with create_tempdir():
         # These system calls are needed when cleaning up tempdir.
         import os
@@ -141,6 +142,8 @@ def unsafe_execute(
         rmdir = os.rmdir
         chdir = os.chdir
         reliability_guard(maximum_memory_bytes=query_maximum_memory_bytes())
+        # print('after reliability guard')
+        # print(query_maximum_memory_bytes())
         exec_globals = {}
         try:
             with swallow_io():
@@ -234,10 +237,13 @@ def untrusted_check(
     min_time_limit: float = DEFAULT_MIN_TIME_LIMIT,
     gt_time_limit_factor: float = DEFAULT_GT_TIME_LIMIT_FACTOR,
 ) -> Tuple[str, np.ndarray]:
+    # print('untrusted check')
     time_limits = [max(min_time_limit, gt_time_limit_factor * t) for t in ref_time]
     timeout = min(os.getenv("EVALPLUS_TIMEOUT_PER_TASK", 60), sum(time_limits)) + 1
     if not fast_check:
         timeout += 1  # extra time for data collection
+
+    # print('timeout', timeout)
 
     # shared memory objects
     progress = Value("i", 0)
@@ -261,14 +267,24 @@ def untrusted_check(
             progress,
         ),
     )
+    # print('about to start!')
+    # print(f"CPU usage: {psutil.cpu_percent()}%")
+    # print(f"Memory available: {psutil.virtual_memory().available / (1024 ** 3):.2f} GB")
     p.start()
+    # print('started!')
     p.join(timeout=timeout + 1)
+    # print('joined!')
     if p.is_alive():
+        # print('terminating ...')
         p.terminate()
         time.sleep(0.1)
     if p.is_alive():
+        # print('killing ...')
         p.kill()
         time.sleep(0.1)
+    # if p.is_alive():
+    #     # print('process is still alive after killing ...')
+    #     pass
 
     stat = _mapping[stat.value]
     details = details[: progress.value]
